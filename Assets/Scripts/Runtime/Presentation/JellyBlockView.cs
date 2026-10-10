@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class JellyBlockView : MonoBehaviour
+public class JellyBlockView : MonoBehaviour
 {
     public JellyBlockData Data { get; set; }
     readonly List<Transform> pieces = new List<Transform>();

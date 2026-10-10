@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-public sealed class GameHud
+public class GameHud
 {
     Canvas canvas;
     Text levelText;

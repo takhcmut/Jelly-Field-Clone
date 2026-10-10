@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class BoardState
+public class BoardState
 {
     readonly Dictionary<Vector2Int, JellyBlockData> cells = new Dictionary<Vector2Int, JellyBlockData>();
     readonly HashSet<Vector2Int> validCells = new HashSet<Vector2Int>();

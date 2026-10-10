@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class ObjectiveTracker
+public class ObjectiveTracker
 {
     readonly Dictionary<JellyColor, int> progress = new Dictionary<JellyColor, int>();
     List<ObjectiveData> objectives = new List<ObjectiveData>();
@@ -29,7 +29,7 @@ public sealed class ObjectiveTracker
     public int GetProgress(JellyColor color) => progress.TryGetValue(color, out var value) ? value : 0;
 }
 
-public sealed class SpawnController
+public class SpawnController
 {
     readonly List<JellyBlockData> currentSlots = new List<JellyBlockData>();
     LevelData level;

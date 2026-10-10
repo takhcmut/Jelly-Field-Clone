@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class BoardGridView
+public class BoardGridView
 {
     sealed class CellVisual
     {

@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class RegionRemoval
+public class RegionRemoval
 {
     public Vector2Int cell;
     public JellyColor color;
     public int regionId;
 }
 
-public sealed class MatchResolver
+public class MatchResolver
 {
     public List<RegionRemoval> FindMatches(IReadOnlyDictionary<Vector2Int, JellyBlockData> board)
     {
