@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class JellyFieldSamples
+public static class SampleLevels
 {
     static JellyBlockData Block(BlockLayout layout, params JellyColor[] colors)
     {

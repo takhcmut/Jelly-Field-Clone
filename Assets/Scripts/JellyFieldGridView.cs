@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class JellyFieldGridView
+public sealed class BoardGridView
 {
     sealed class CellVisual
     {

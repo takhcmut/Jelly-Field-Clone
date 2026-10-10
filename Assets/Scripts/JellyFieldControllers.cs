@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class JellyFieldObjectiveController
+public sealed class ObjectiveTracker
 {
     readonly Dictionary<JellyColor, int> progress = new Dictionary<JellyColor, int>();
     List<ObjectiveData> objectives = new List<ObjectiveData>();
@@ -15,7 +15,7 @@ public sealed class JellyFieldObjectiveController
         foreach (var objective in objectives) progress[objective.color] = 0;
     }
 
-    public void Count(IReadOnlyList<JellyFieldRemoval> removals)
+    public void Count(IReadOnlyList<RegionRemoval> removals)
     {
         foreach (var removal in removals)
             if (progress.ContainsKey(removal.color)) progress[removal.color]++;
@@ -31,7 +31,7 @@ public sealed class JellyFieldObjectiveController
     public int GetProgress(JellyColor color) => progress.TryGetValue(color, out var value) ? value : 0;
 }
 
-public sealed class JellyFieldSpawnController
+public sealed class SpawnController
 {
     readonly List<JellyBlockData> currentSlots = new List<JellyBlockData>();
     LevelData level;

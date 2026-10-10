@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-public sealed class JellyFieldUiController
+public sealed class GameHud
 {
     Canvas canvas;
     Text levelText;
@@ -37,7 +37,7 @@ public sealed class JellyFieldUiController
         completionPanel.SetActive(false);
     }
 
-    public void ShowLevel(LevelData level, int index, int total, JellyFieldObjectiveController objectives)
+    public void ShowLevel(LevelData level, int index, int total, ObjectiveTracker objectives)
     {
         levelText.text = level.name + "  " + (index + 1) + "/" + total;
         objectiveText.text = "OBJECTIVES\n";

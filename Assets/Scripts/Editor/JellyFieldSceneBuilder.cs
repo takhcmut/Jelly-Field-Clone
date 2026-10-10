@@ -13,7 +13,7 @@ public static class JellyFieldSceneBuilder
         var assets = CreateSampleLevelAssetsInternal();
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var game = new GameObject("JellyFieldGame");
-        game.AddComponent<JellyFieldGame>();
+        game.AddComponent<GameController>();
         var board = new GameObject("Board").transform;
         board.SetParent(game.transform, false);
         var grid = new GameObject("Grid").transform;
@@ -25,7 +25,7 @@ public static class JellyFieldSceneBuilder
         camera.AddComponent<Camera>();
         camera.transform.position = new Vector3(1.5f, 2.5f, -20f);
         camera.transform.rotation = Quaternion.identity;
-        var serializedGame = new SerializedObject(game.GetComponent<JellyFieldGame>());
+        var serializedGame = new SerializedObject(game.GetComponent<GameController>());
         serializedGame.FindProperty("levelAssets").arraySize = assets.Count;
         for (int i = 0; i < assets.Count; i++) serializedGame.FindProperty("levelAssets").GetArrayElementAtIndex(i).objectReferenceValue = assets[i];
         serializedGame.FindProperty("gameCamera").objectReferenceValue = camera.GetComponent<Camera>();
@@ -44,7 +44,7 @@ public static class JellyFieldSceneBuilder
         CreateSampleLevelAssetsInternal();
     }
 
-    static List<JellyFieldLevelAsset> CreateSampleLevelAssetsInternal()
+    static List<LevelDefinitionAsset> CreateSampleLevelAssetsInternal()
     {
         const string root = "Assets/Data";
         const string folder = "Assets/Data/JellyField";
@@ -53,14 +53,14 @@ public static class JellyFieldSceneBuilder
         EnsureFolder(root, "JellyField");
         EnsureFolder(folder, "Levels");
 
-        var result = new List<JellyFieldLevelAsset>();
-        foreach (var sample in JellyFieldSamples.CreateAll())
+        var result = new List<LevelDefinitionAsset>();
+        foreach (var sample in SampleLevels.CreateAll())
         {
             var path = levelFolder + "/" + sample.name.Replace(" ", "_") + ".asset";
-            var asset = AssetDatabase.LoadAssetAtPath<JellyFieldLevelAsset>(path);
+            var asset = AssetDatabase.LoadAssetAtPath<LevelDefinitionAsset>(path);
             if (asset == null)
             {
-                asset = ScriptableObject.CreateInstance<JellyFieldLevelAsset>();
+                asset = ScriptableObject.CreateInstance<LevelDefinitionAsset>();
                 AssetDatabase.CreateAsset(asset, path);
             }
             asset.level = sample;

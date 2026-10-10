@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "JellyFieldLevel", menuName = "Jelly Field/Level Data")]
-public sealed class JellyFieldLevelAsset : ScriptableObject
+public sealed class LevelDefinitionAsset : ScriptableObject
 {
     public LevelData level = new LevelData();
 

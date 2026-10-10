@@ -17,11 +17,11 @@ Both input backends are enabled because the MVP uses Unity's built-in mouse/touc
 There are two supported setups:
 
 1. Fastest: open `Assets/Scenes/SampleScene.unity` and press Play. The runtime bootstrap creates the camera, board, spawn area, and UI automatically.
-2. Recommended: choose `Tools > JellyField > Build Demo Scene`. This creates the level assets and `Assets/Scenes/MainScene.unity` with a configured `JellyFieldGame`, `Main Camera`, `Board`, and `Spawn Area`. Open that scene and press Play.
+2. Recommended: choose `Tools > JellyField > Build Demo Scene`. This creates the level assets and `Assets/Scenes/MainScene.unity` with a configured `GameController`, `Main Camera`, `Board`, `Grid`, and `Spawn Area`. Open that scene and press Play.
 
 You can also choose `Tools > JellyField > Create Sample Level Assets` when you only want to create or refresh the editable level assets.
 
-In the recommended scene, select `JellyFieldGame` in the Hierarchy. Its Inspector has:
+In the recommended scene, select `GameController` in the Hierarchy. Its Inspector has:
 
 - `Level Assets`: the ordered level list. The order controls Next Level.
 - `Use Runtime Fallback Samples`: leave enabled while prototyping; disable it once all level assets are assigned.
@@ -31,7 +31,7 @@ In the recommended scene, select `JellyFieldGame` in the Hierarchy. Its Inspecto
 - `Spawn Root`: parent for spawn block views.
 - `Jelly Region Prefab`: optional visual prefab for one jelly region.
 
-The runtime creates only the Canvas UI because it is gameplay-owned and does not need scene references. Do not add a second `JellyFieldGame`; the bootstrap prevents duplicates.
+The runtime creates only the Canvas UI because it is gameplay-owned and does not need scene references. Do not add a second `GameController`; the bootstrap prevents duplicates.
 
 The grid is visual only. Every valid coordinate gets a bordered cell; empty cells use a lighter fill, while occupied cells use a darker fill. Missing coordinates are not created, so irregular board layouts remain visibly and logically empty outside the valid-cell set.
 
@@ -45,7 +45,7 @@ Recommended prefab setup:
 2. Make the root pivot centered on the visual mesh.
 3. Make one prefab instance approximately one Unity unit wide and high.
 4. Remove gameplay scripts and unnecessary colliders from the visual prefab. Dragging uses screen-to-board coordinates, not physics.
-5. Assign the prefab to `JellyFieldGame > Jelly Region Prefab`.
+5. Assign the prefab to `GameController > Jelly Region Prefab`.
 6. Press Play and verify that one, two, three, and four-region blocks keep the expected cell layout.
 
 The current view assigns a cached color material to every renderer under the prefab. This is intentional for the sample color system; if the imported asset must keep its own textured material, change that assignment in `JellyBlockView.Build()` to a `MaterialPropertyBlock` tint or remove the color override.
@@ -62,24 +62,27 @@ For richer bounce, wobble, or shatter effects, add an animation component to the
 
 - `JellyFieldTypes.cs`: enums and serializable logical data (`LevelData`, `JellyBlockData`, regions, objectives).
 - `JellyFieldSamples.cs`: provisional three-level content. Edit this file when changing coordinates, starting blocks, objectives, or spawn sequences.
-- `JellyFieldLevelAsset.cs`: editable `ScriptableObject` wrapper for one level.
-- `JellyFieldBoard.cs`: valid cells, occupancy, placement, and region removal.
-- `JellyFieldMatchResolver.cs`: deterministic boundary matching and unique removal collection.
-- `JellyFieldControllers.cs`: spawn and objective services.
-- `JellyFieldUiController.cs`: Canvas/UI construction and presentation updates.
-- `JellyFieldGame.cs`: composition root, level lifecycle, input, camera framing, and cascade orchestration.
-- `JellyBlockView.cs`: procedural cube rendering, cached materials, and finite jiggle/pop animations.
-- `Editor/JellyFieldSceneBuilder.cs`: the one-click scene creation menu command.
+- `Runtime/Data/GameData.cs`: logical data types and geometry definitions.
+- `Runtime/Data/LevelDefinitionAsset.cs`: editable `ScriptableObject` wrapper for one level.
+- `Runtime/Data/SampleLevels.cs`: provisional fallback level factory.
+- `Runtime/Board/BoardState.cs`: valid cells, occupancy, placement, and region removal.
+- `Runtime/Board/MatchResolver.cs`: deterministic boundary matching and unique removal collection.
+- `Runtime/Gameplay/GameplayServices.cs`: spawn and objective services.
+- `Runtime/Gameplay/GameController.cs`: composition root, level lifecycle, input, camera framing, and cascade orchestration.
+- `Runtime/Presentation/GameHud.cs`: Canvas/UI construction and presentation updates.
+- `Runtime/Presentation/BoardGridView.cs`: visible valid-cell grid.
+- `Runtime/Presentation/JellyBlockView.cs`: procedural or prefab-based rendering and jiggle/pop animations.
+- `Editor/SceneBuilder.cs`: one-click scene and level asset creation menu.
 
-The important rule is that matching lives in `JellyFieldGame` and reads `JellyRegionData.rect`; `JellyBlockView` only renders that same geometry. Do not implement matching by checking renderer or collider overlap.
+The important rule is that matching lives in `MatchResolver` and reads `JellyRegionData.rect`; `JellyBlockView` only renders that same geometry. Do not implement matching by checking renderer or collider overlap.
 
-To edit a level, select its asset under `Assets/Data/JellyField/Levels` and edit `Level`, `Valid Cells`, `Initial Cells`, `Objectives`, `Spawn Slot Count`, `Initial Spawns`, and `Spawn Sequence` in the Inspector. To add a new level asset, use `Create > Jelly Field > Level Data`, fill the fields, then add the asset to `JellyFieldGame.Level Assets` in the desired order.
+To edit a level, select its asset under `Assets/Data/JellyField/Levels` and edit `Level`, `Valid Cells`, `Initial Cells`, `Objectives`, `Spawn Slot Count`, `Initial Spawns`, and `Spawn Sequence` in the Inspector. To add a new level asset, use `Create > Jelly Field > Level Data`, fill the fields, then add the asset to `GameController.Level Assets` in the desired order.
 
-`JellyFieldSamples.cs` is now only provisional fallback/content generation. Once assets are assigned to the scene, gameplay no longer depends on changing that code file.
+`Runtime/Data/SampleLevels.cs` is only provisional fallback/content generation. Once assets are assigned to the scene, gameplay no longer depends on changing that code file.
 
 ## Gameplay assumptions
 
-The three level layouts, colors, objectives, and spawn sequences are clearly provisional sample data. They contain exactly 11, 12, and 13 valid cells and can be replaced in `JellyFieldSamples` without changing the matching algorithm.
+The three level layouts, colors, objectives, and spawn sequences are clearly provisional sample data. They contain exactly 11, 12, and 13 valid cells and can be replaced in `SampleLevels` without changing the matching algorithm.
 
 Matching is logical: only same-colored regions in different adjacent cells match, and a match requires positive shared boundary length. All matches in a wave are collected before removal. Recomposition and repeated waves continue until the board is stable. Objective counters count individual destroyed regions, not cells.
 

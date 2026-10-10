@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class JellyFieldBoard
+public sealed class BoardState
 {
     readonly Dictionary<Vector2Int, JellyBlockData> cells = new Dictionary<Vector2Int, JellyBlockData>();
     readonly HashSet<Vector2Int> validCells = new HashSet<Vector2Int>();
@@ -34,7 +34,7 @@ public sealed class JellyFieldBoard
         return true;
     }
 
-    public void RemoveRegions(IReadOnlyList<JellyFieldRemoval> removals)
+    public void RemoveRegions(IReadOnlyList<RegionRemoval> removals)
     {
         foreach (var pair in cells)
         {
@@ -47,7 +47,7 @@ public sealed class JellyFieldBoard
         foreach (var cell in emptyCells) cells.Remove(cell);
     }
 
-    bool Contains(IReadOnlyList<JellyFieldRemoval> removals, Vector2Int cell, int regionId)
+    bool Contains(IReadOnlyList<RegionRemoval> removals, Vector2Int cell, int regionId)
     {
         for (int i = 0; i < removals.Count; i++)
             if (removals[i].cell == cell && removals[i].regionId == regionId) return true;

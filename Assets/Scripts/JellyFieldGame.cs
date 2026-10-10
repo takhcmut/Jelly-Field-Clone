@@ -2,12 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class JellyFieldGame : MonoBehaviour
+public sealed class GameController : MonoBehaviour
 {
-    public static JellyFieldGame Instance { get; private set; }
+    public static GameController Instance { get; private set; }
 
     [Header("Level configuration")]
-    [SerializeField] JellyFieldLevelAsset[] levelAssets;
+    [SerializeField] LevelDefinitionAsset[] levelAssets;
     [SerializeField] bool useRuntimeFallbackSamples = true;
 
     [Header("Scene references")]
@@ -28,12 +28,12 @@ public sealed class JellyFieldGame : MonoBehaviour
     readonly List<LevelData> levels = new List<LevelData>();
     readonly List<JellyBlockView> boardViews = new List<JellyBlockView>();
     readonly List<JellyBlockView> spawnViews = new List<JellyBlockView>();
-    readonly JellyFieldBoard board = new JellyFieldBoard();
-    readonly JellyFieldMatchResolver matchResolver = new JellyFieldMatchResolver();
-    readonly JellyFieldObjectiveController objectives = new JellyFieldObjectiveController();
-    readonly JellyFieldSpawnController spawns = new JellyFieldSpawnController();
-    readonly JellyFieldUiController ui = new JellyFieldUiController();
-    readonly JellyFieldGridView gridView = new JellyFieldGridView();
+    readonly BoardState board = new BoardState();
+    readonly MatchResolver matchResolver = new MatchResolver();
+    readonly ObjectiveTracker objectives = new ObjectiveTracker();
+    readonly SpawnController spawns = new SpawnController();
+    readonly GameHud ui = new GameHud();
+    readonly BoardGridView gridView = new BoardGridView();
 
     bool resolving;
     int draggedSlot = -1;
@@ -42,8 +42,8 @@ public sealed class JellyFieldGame : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
     {
-        if (FindAnyObjectByType<JellyFieldGame>() == null)
-            new GameObject("JellyFieldGame").AddComponent<JellyFieldGame>();
+        if (FindAnyObjectByType<GameController>() == null)
+            new GameObject("JellyFieldGame").AddComponent<GameController>();
     }
 
     void Awake()
@@ -66,7 +66,7 @@ public sealed class JellyFieldGame : MonoBehaviour
                 if (asset != null) levels.Add(asset.CreateRuntimeData());
 
         if (levels.Count == 0 && useRuntimeFallbackSamples)
-            levels.AddRange(JellyFieldSamples.CreateAll());
+            levels.AddRange(SampleLevels.CreateAll());
 
         if (levels.Count == 0)
             Debug.LogError("Jelly Field has no level assets assigned and runtime fallback samples are disabled.");

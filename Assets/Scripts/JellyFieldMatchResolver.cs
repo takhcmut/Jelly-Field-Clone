@@ -1,18 +1,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class JellyFieldRemoval
+public sealed class RegionRemoval
 {
     public Vector2Int cell;
     public JellyColor color;
     public int regionId;
 }
 
-public sealed class JellyFieldMatchResolver
+public sealed class MatchResolver
 {
-    public List<JellyFieldRemoval> FindMatches(IReadOnlyDictionary<Vector2Int, JellyBlockData> board)
+    public List<RegionRemoval> FindMatches(IReadOnlyDictionary<Vector2Int, JellyBlockData> board)
     {
-        var matches = new List<JellyFieldRemoval>();
+        var matches = new List<RegionRemoval>();
         var directions = new[] { Vector2Int.right, Vector2Int.up };
 
         foreach (var pair in board)
@@ -35,11 +35,11 @@ public sealed class JellyFieldMatchResolver
         return matches;
     }
 
-    static void AddUnique(List<JellyFieldRemoval> matches, Vector2Int cell, JellyRegionData region)
+    static void AddUnique(List<RegionRemoval> matches, Vector2Int cell, JellyRegionData region)
     {
         for (int i = 0; i < matches.Count; i++)
             if (matches[i].cell == cell && matches[i].regionId == region.id) return;
-        matches.Add(new JellyFieldRemoval { cell = cell, color = region.color, regionId = region.id });
+        matches.Add(new RegionRemoval { cell = cell, color = region.color, regionId = region.id });
     }
 
     static bool TouchesSharedBoundary(Rect first, Rect second, Vector2Int direction)
