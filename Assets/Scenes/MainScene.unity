@@ -180,18 +180,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameController
   levelAssets:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  useRuntimeFallbackSamples: 1
+  - {fileID: 11400000, guid: fd3701542b15cc344b0afc4d7eaef7de, type: 2}
+  - {fileID: 11400000, guid: 320932681346f7c4d86a92579f6ff01f, type: 2}
+  - {fileID: 11400000, guid: 6f8fc1aae2260584c9dd1bff6df3d8e6, type: 2}
+  useRuntimeFallbackSamples: 0
   gameCamera: {fileID: 1470326559}
   boardRoot: {fileID: 150043954}
   gridRoot: {fileID: 1151760685}
   spawnRoot: {fileID: 1709244239}
-  jellyRegionPrefab: {fileID: 0}
-  cascadePopDuration: 0.3
-  cascadeBeforeRemovalDelay: 0.2
-  cascadeWaveDelay: 0.45
+  jellyRegionPrefab: {fileID: 123849241608759225, guid: 5c2dfd57fcee0764d808659dd8c61d06, type: 3}
+  jellyMaterials:
+    yellow: {fileID: 2100000, guid: 868f48d1d2e4eaa47b95d9fa653f3c8e, type: 2}
+    blue: {fileID: 2100000, guid: 37079798685ca924f8b81071f0017015, type: 2}
+    purple: {fileID: 2100000, guid: 3c1d299d0e74213429e7e19df5207fb1, type: 2}
+    green: {fileID: 2100000, guid: 28f255a4f80fa03438be8cacd49926a9, type: 2}
+    pink: {fileID: 2100000, guid: 452b78c4b44ae1d4cbe0782ac9519651, type: 2}
+  cascadePopDuration: 0.4
+  cascadeBeforeRemovalDelay: 0.3
+  cascadeWaveDelay: 0.6
 --- !u!4 &761867918
 Transform:
   m_ObjectHideFlags: 0
@@ -251,6 +257,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1470326560}
   - component: {fileID: 1470326559}
+  - component: {fileID: 1470326561}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -324,6 +331,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1470326561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1470326558}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &1709244238
 GameObject:
   m_ObjectHideFlags: 0

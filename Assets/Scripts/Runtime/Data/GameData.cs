@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum JellyColor { Yellow, Blue, Red, Green, Pink }
+public enum JellyColor { Yellow, Blue, Purple, Green, Pink }
 public enum BlockLayout { One, TwoHorizontal, TwoVertical, ThreeLeft, ThreeRight, ThreeTop, ThreeBottom, Four }
 public enum JellyGameState { Playing, ResolvingCascade, LevelCompleted, AllLevelsCompleted }
 

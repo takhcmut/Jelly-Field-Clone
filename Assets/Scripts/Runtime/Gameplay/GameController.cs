@@ -17,6 +17,9 @@ public class GameController : MonoBehaviour
     [SerializeField] Transform spawnRoot;
     [SerializeField] GameObject jellyRegionPrefab;
 
+    [Header("Jelly materials")]
+    [SerializeField] JellyMaterialPalette jellyMaterials = new JellyMaterialPalette();
+
     [Header("Cascade timing")]
     [SerializeField, Min(0f)] float cascadePopDuration = .3f;
     [SerializeField, Min(0f)] float cascadeBeforeRemovalDelay = .2f;
@@ -139,13 +142,13 @@ public class GameController : MonoBehaviour
 
         foreach (var pair in board.Cells)
         {
-            var view = JellyBlockView.Create(pair.Value, boardRoot, CellWorld(pair.Key), pair.Key, -1, jellyRegionPrefab);
+            var view = JellyBlockView.Create(pair.Value, boardRoot, CellWorld(pair.Key), pair.Key, -1, jellyRegionPrefab, jellyMaterials);
             boardViews.Add(view);
         }
 
         for (int slot = 0; slot < spawns.CurrentSlots.Count; slot++)
         {
-            var view = JellyBlockView.Create(spawns.Get(slot), spawnRoot, SpawnWorld(slot), Vector2Int.zero, slot, jellyRegionPrefab);
+            var view = JellyBlockView.Create(spawns.Get(slot), spawnRoot, SpawnWorld(slot), Vector2Int.zero, slot, jellyRegionPrefab, jellyMaterials);
             spawnViews.Add(view);
         }
         gridView.Refresh(board.Cells);

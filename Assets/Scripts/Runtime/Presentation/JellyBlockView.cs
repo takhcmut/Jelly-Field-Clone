@@ -1,25 +1,46 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+
+ [System.Serializable]
+public class JellyMaterialPalette
+{
+    public Material yellow;
+    public Material blue;
+    public Material purple;
+    public Material green;
+    public Material pink;
+
+    public Material Get(JellyColor color)
+    {
+        switch (color)
+        {
+            case JellyColor.Yellow: return yellow;
+            case JellyColor.Blue: return blue;
+            case JellyColor.Purple: return purple;
+            case JellyColor.Green: return green;
+            case JellyColor.Pink: return pink;
+            default: return null;
+        }
+    }
+}
 
 public class JellyBlockView : MonoBehaviour
 {
     public JellyBlockData Data { get; set; }
-    readonly List<Transform> pieces = new List<Transform>();
-    static readonly Dictionary<JellyColor, Material> materials = new Dictionary<JellyColor, Material>();
+    readonly System.Collections.Generic.List<Transform> pieces = new System.Collections.Generic.List<Transform>();
 
-    public static JellyBlockView Create(JellyBlockData data, Transform parent, Vector3 position, Vector2Int cell, int spawnSlot, GameObject regionPrefab = null)
+    public static JellyBlockView Create(JellyBlockData data, Transform parent, Vector3 position, Vector2Int cell, int spawnSlot, GameObject regionPrefab = null, JellyMaterialPalette materialPalette = null)
     {
         var objectRoot = new GameObject(spawnSlot >= 0 ? "Spawn Jelly " + spawnSlot : "Jelly " + cell);
         objectRoot.transform.SetParent(parent);
         objectRoot.transform.position = position;
         var view = objectRoot.AddComponent<JellyBlockView>();
         view.Data = data;
-        view.Build(regionPrefab);
+        view.Build(regionPrefab, materialPalette);
         return view;
     }
 
-    void Build(GameObject regionPrefab)
+    void Build(GameObject regionPrefab, JellyMaterialPalette materialPalette)
     {
         Data.ApplyGeometry();
         foreach (var piece in pieces) if (piece != null) Destroy(piece.gameObject);
@@ -32,19 +53,11 @@ public class JellyBlockView : MonoBehaviour
             cube.transform.SetParent(transform, false);
             cube.transform.localPosition = new Vector3(region.rect.center.x - .5f, region.rect.center.y - .5f, 0);
             cube.transform.localScale = new Vector3(region.rect.width * .92f, region.rect.height * .92f, .32f);
-            var material = MaterialFor(region.color);
-            foreach (var renderer in cube.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial = material;
+            var material = materialPalette == null ? null : materialPalette.Get(region.color);
+            if (material != null)
+                foreach (var renderer in cube.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial = material;
             pieces.Add(cube.transform);
         }
-    }
-
-    static Material MaterialFor(JellyColor color)
-    {
-        if (materials.TryGetValue(color, out var material)) return material;
-        material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        material.color = color == JellyColor.Yellow ? new Color(1, .75f, .12f) : color == JellyColor.Blue ? new Color(.1f, .5f, 1) : color == JellyColor.Red ? new Color(1, .2f, .2f) : color == JellyColor.Green ? new Color(.2f, .85f, .35f) : new Color(1, .25f, .7f);
-        materials[color] = material;
-        return material;
     }
 
     public void SetSelected(bool selected)
