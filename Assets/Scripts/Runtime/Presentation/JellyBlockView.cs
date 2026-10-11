@@ -48,16 +48,31 @@ public class JellyBlockView : MonoBehaviour
         for (int i = 0; i < Data.regions.Count; i++)
         {
             var region = Data.regions[i];
-            var cube = regionPrefab == null ? GameObject.CreatePrimitive(PrimitiveType.Cube) : Instantiate(regionPrefab, transform);
-            cube.name = "Region " + region.id;
-            cube.transform.SetParent(transform, false);
-            cube.transform.localPosition = new Vector3(region.rect.center.x - .5f, region.rect.center.y - .5f, 0);
-            cube.transform.localScale = new Vector3(region.rect.width * .92f, region.rect.height * .92f, .32f);
+            var regionRoot = new GameObject("Region " + region.id);
+            regionRoot.transform.SetParent(transform, false);
+            regionRoot.transform.localPosition = new Vector3(region.rect.center.x - .5f, region.rect.center.y - .5f, 0);
+
+            var cube = regionPrefab == null ? GameObject.CreatePrimitive(PrimitiveType.Cube) : Instantiate(regionPrefab);
+            cube.transform.SetParent(regionRoot.transform, false);
+            cube.transform.localPosition = Vector3.zero;
+            var prefabScale = cube.transform.localScale;
+            cube.transform.localScale = Vector3.Scale(prefabScale, new Vector3(region.rect.width * .92f, region.rect.height * .92f, .32f));
+            CenterVisual(cube, regionRoot.transform);
             var material = materialPalette == null ? null : materialPalette.Get(region.color);
             if (material != null)
                 foreach (var renderer in cube.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial = material;
-            pieces.Add(cube.transform);
+            pieces.Add(regionRoot.transform);
         }
+    }
+
+    static void CenterVisual(GameObject visual, Transform anchor)
+    {
+        var renderers = visual.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) return;
+
+        var bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+        visual.transform.position += anchor.position - bounds.center;
     }
 
     public void SetSelected(bool selected)

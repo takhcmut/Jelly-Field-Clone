@@ -15,7 +15,11 @@ public class GameController : MonoBehaviour
     [SerializeField] Transform boardRoot;
     [SerializeField] Transform gridRoot;
     [SerializeField] Transform spawnRoot;
+
+    [Header("Board visuals")]
     [SerializeField] GameObject jellyRegionPrefab;
+    [SerializeField] GameObject cellPrefab;
+    [SerializeField, Range(.5f, 1f)] float cellVisualScale = .92f;
 
     [Header("Jelly materials")]
     [SerializeField] JellyMaterialPalette jellyMaterials = new JellyMaterialPalette();
@@ -113,7 +117,7 @@ public class GameController : MonoBehaviour
         board.Load(level);
         objectives.Load(level);
         spawns.Load(level);
-        gridView.Build(board.ValidCells, gridRoot);
+        gridView.Build(board.ValidCells, gridRoot, cellPrefab, cellVisualScale);
         RebuildViews();
         ui.ShowLevel(level, CurrentLevelIndex, levels.Count, objectives);
         ui.SetMessage("Drag a jelly into an empty cell");
@@ -151,7 +155,6 @@ public class GameController : MonoBehaviour
             var view = JellyBlockView.Create(spawns.Get(slot), spawnRoot, SpawnWorld(slot), Vector2Int.zero, slot, jellyRegionPrefab, jellyMaterials);
             spawnViews.Add(view);
         }
-        gridView.Refresh(board.Cells);
     }
 
     void ClearViews(List<JellyBlockView> views)

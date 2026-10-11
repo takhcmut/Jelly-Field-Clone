@@ -188,7 +188,9 @@ MonoBehaviour:
   boardRoot: {fileID: 150043954}
   gridRoot: {fileID: 1151760685}
   spawnRoot: {fileID: 1709244239}
-  jellyRegionPrefab: {fileID: 123849241608759225, guid: 5c2dfd57fcee0764d808659dd8c61d06, type: 3}
+  jellyRegionPrefab: {fileID: 8375288754863266657, guid: 038a367359615ad4a91f8a898dfbee0d, type: 3}
+  cellPrefab: {fileID: 7617247805286992659, guid: d0703c1bfe102504f92c6aa0056c02b9, type: 3}
+  cellVisualScale: 0.92
   jellyMaterials:
     yellow: {fileID: 2100000, guid: 868f48d1d2e4eaa47b95d9fa653f3c8e, type: 2}
     blue: {fileID: 2100000, guid: 37079798685ca924f8b81071f0017015, type: 2}
