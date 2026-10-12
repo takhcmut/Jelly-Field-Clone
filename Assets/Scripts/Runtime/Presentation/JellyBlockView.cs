@@ -35,11 +35,70 @@ public class JellyBlockView : MonoBehaviour
         public Rect rect;
     }
 
+    Transform motionRoot;
+Transform idleRoot;
+Transform actionRoot;
+
+Coroutine actionScaleRoutine;
+Coroutine rotationRoutine;
+
+float jigglePhase;
+
+
     public JellyBlockData Data { get; set; }
     public Vector2Int Cell { get; private set; }
     readonly Dictionary<int, RegionVisual> regionVisuals = new Dictionary<int, RegionVisual>();
     bool isDragging;
 
+    void LateUpdate()
+{
+    if (idleRoot == null) return;
+
+    // Khi kéo, chuyển động rõ hơn; khi đứng yên, rung rất nhẹ.
+    float amplitude = isDragging ? 0.025f : 0.006f;
+    float speed = isDragging ? 9f : 2.5f;
+    float phase = Time.time * speed + jigglePhase;
+
+    float wave = Mathf.Sin(phase);
+
+    idleRoot.localScale = new Vector3(
+        1f + wave * amplitude,
+        1f - wave * amplitude * 0.7f,
+        1f
+    );
+
+    float angle = Mathf.Sin(phase * 0.75f)
+        * (isDragging ? 2f : 0.4f);
+
+    idleRoot.localRotation = Quaternion.Euler(0f, 0f, angle);
+}
+
+    public IEnumerator PlayLandingJiggle()
+{
+    if (actionRoot == null)
+        yield break;
+
+    if (actionScaleRoutine != null)
+    {
+        StopCoroutine(actionScaleRoutine);
+        actionScaleRoutine = null;
+    }
+
+    // Nén khi chạm ô.
+    yield return ScaleActionTo(
+        new Vector3(0.92f, 1.10f, 1f),
+        0.08f
+    );
+
+    // Bật nhẹ trở lại.
+    yield return ScaleActionTo(
+        new Vector3(1.04f, 0.96f, 1f),
+        0.09f
+    );
+
+    // Trở về trạng thái bình thường.
+    yield return ScaleActionTo(Vector3.one, 0.10f);
+}
     public static JellyBlockView Create(JellyBlockData data, Transform parent, Vector3 position, Vector2Int cell, int spawnSlot, GameObject regionPrefab = null, JellyMaterialPalette materialPalette = null, float regionFillScale = 1.02f)
     {
         var objectRoot = new GameObject(spawnSlot >= 0 ? "Spawn Jelly " + spawnSlot : "Jelly " + cell);
@@ -48,9 +107,22 @@ public class JellyBlockView : MonoBehaviour
         var view = objectRoot.AddComponent<JellyBlockView>();
         view.Data = data;
         view.Cell = cell;
+        view.motionRoot = CreateLayer(objectRoot.transform, "MotionRoot");
+        view.idleRoot = CreateLayer(view.motionRoot, "IdleJiggle");
+        view.actionRoot = CreateLayer(view.idleRoot, "ActionScale");
+
+        view.jigglePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+
         view.Build(regionPrefab, materialPalette, regionFillScale);
         return view;
     }
+
+    static Transform CreateLayer(Transform parent, string name)
+{
+    var layer = new GameObject(name).transform;
+    layer.SetParent(parent, false);
+    return layer;
+}
 
 //     void Build(GameObject regionPrefab, JellyMaterialPalette materialPalette, float regionFillScale)
 //     {
@@ -95,7 +167,8 @@ void Build(
     foreach (var region in Data.regions)
     {
         var regionRoot = new GameObject("Region " + region.id);
-        regionRoot.transform.SetParent(transform, false);
+        // regionRoot.transform.SetParent(transform, false);
+        regionRoot.transform.SetParent(actionRoot, false);
         regionRoot.transform.localPosition = RegionCenter(region.rect);
         regionRoot.transform.localRotation = Quaternion.identity;
         regionRoot.transform.localScale = Vector3.one;
@@ -429,47 +502,179 @@ IEnumerator RegionRemovalRoutine(
 
     static Vector3 RegionCenter(Rect rect) => new Vector3(rect.center.x - .5f, rect.center.y - .5f, 0);
 
+    // public void SetSelected(bool selected)
+    // {
+    //     StopAllCoroutines();
+    //     if (isDragging) return;
+    //     StartCoroutine(Jiggle(selected ? 1.08f : 1f, .16f));
+    // }
+
+    // public void SetDragging(bool dragging)
+    // {
+    //     if (isDragging == dragging) return;
+    //     isDragging = dragging;
+    //     StopAllCoroutines();
+    //     transform.localScale = dragging ? new Vector3(1.08f, .92f, 1f) : Vector3.one;
+    //     if (!dragging) StartCoroutine(SettleDragRotation());
+    // }
+
     public void SetSelected(bool selected)
+{
+    if (!selected || isDragging || actionRoot == null)
+        return;
+
+    StartActionAnimation(SelectedPulse());
+}
+
+public void SetDragging(bool dragging)
+{
+    if (isDragging == dragging) return;
+
+    isDragging = dragging;
+
+    if (actionScaleRoutine != null)
+        StopCoroutine(actionScaleRoutine);
+
+    if (dragging)
     {
-        StopAllCoroutines();
-        if (isDragging) return;
-        StartCoroutine(Jiggle(selected ? 1.08f : 1f, .16f));
+        if (rotationRoutine != null)
+        {
+            StopCoroutine(rotationRoutine);
+            rotationRoutine = null;
+        }
+
+        actionScaleRoutine = StartCoroutine(
+            AnimateActionScale(
+                new Vector3(1.06f, 0.94f, 1f),
+                0.08f
+            )
+        );
+    }
+    else
+    {
+        actionScaleRoutine = StartCoroutine(ReleaseBounce());
+
+        if (rotationRoutine != null)
+            StopCoroutine(rotationRoutine);
+
+        rotationRoutine = StartCoroutine(SettleDragRotation());
+    }
+}
+
+void StartActionAnimation(IEnumerator animation)
+{
+    if (actionScaleRoutine != null)
+        StopCoroutine(actionScaleRoutine);
+
+    actionScaleRoutine = StartCoroutine(animation);
+}
+
+IEnumerator SelectedPulse()
+{
+    yield return ScaleActionTo(new Vector3(1.04f, 0.96f, 1f), 0.06f);
+    yield return ScaleActionTo(Vector3.one, 0.08f);
+
+    actionScaleRoutine = null;
+}
+
+IEnumerator AnimateActionScale(Vector3 target, float duration)
+{
+    yield return ScaleActionTo(target, duration);
+    actionScaleRoutine = null;
+}
+
+IEnumerator ReleaseBounce()
+{
+    yield return ScaleActionTo(
+        new Vector3(0.94f, 1.06f, 1f), 0.06f
+    );
+
+    yield return ScaleActionTo(Vector3.one, 0.12f);
+
+    actionScaleRoutine = null;
+}
+
+IEnumerator ScaleActionTo(Vector3 target, float duration)
+{
+    Vector3 start = actionRoot.localScale;
+    float elapsed = 0f;
+
+    while (elapsed < duration)
+    {
+        elapsed += Time.deltaTime;
+        float t = Mathf.Clamp01(elapsed / duration);
+
+        // SmoothStep giúp chuyển động mượt hơn.
+        t = t * t * (3f - 2f * t);
+
+        actionRoot.localScale = Vector3.Lerp(start, target, t);
+        yield return null;
     }
 
-    public void SetDragging(bool dragging)
-    {
-        if (isDragging == dragging) return;
-        isDragging = dragging;
-        StopAllCoroutines();
-        transform.localScale = dragging ? new Vector3(1.08f, .92f, 1f) : Vector3.one;
-        if (!dragging) StartCoroutine(SettleDragRotation());
-    }
+    actionRoot.localScale = target;
+}
+
+    
+
+    // public void SetDragVelocity(Vector3 velocity)
+    // {
+    //     if (!isDragging) return;
+    //     transform.localRotation = Quaternion.Euler(
+    //         Mathf.Clamp(-velocity.y * .015f, -10f, 10f),
+    //         Mathf.Clamp(velocity.x * .015f, -10f, 10f),
+    //         Mathf.Clamp(-velocity.x * .01f, -8f, 8f));
+    // }
 
     public void SetDragVelocity(Vector3 velocity)
+{
+    if (!isDragging || motionRoot == null) return;
+
+    motionRoot.localRotation = Quaternion.Euler(
+        Mathf.Clamp(-velocity.y * 0.015f, -10f, 10f),
+        Mathf.Clamp(velocity.x * 0.015f, -10f, 10f),
+        Mathf.Clamp(-velocity.x * 0.01f, -8f, 8f)
+    );
+}
+
+IEnumerator SettleDragRotation()
+{
+    Quaternion start = motionRoot.localRotation;
+    float elapsed = 0f;
+    const float duration = 0.16f;
+
+    while (elapsed < duration)
     {
-        if (!isDragging) return;
-        transform.localRotation = Quaternion.Euler(
-            Mathf.Clamp(-velocity.y * .015f, -10f, 10f),
-            Mathf.Clamp(velocity.x * .015f, -10f, 10f),
-            Mathf.Clamp(-velocity.x * .01f, -8f, 8f));
+        elapsed += Time.deltaTime;
+
+        float t = Mathf.Clamp01(elapsed / duration);
+        t = t * t * (3f - 2f * t);
+
+        motionRoot.localRotation = Quaternion.Slerp(
+            start, Quaternion.identity, t
+        );
+
+        yield return null;
     }
 
+    motionRoot.localRotation = Quaternion.identity;
+    rotationRoutine = null;
+}
     public void PlayPop(float duration = .08f)
     {
         StopAllCoroutines();
         StartCoroutine(Pop(duration));
     }
 
-    IEnumerator SettleDragRotation()
-    {
-        var start = transform.localRotation;
-        for (float time = 0; time < .16f; time += Time.deltaTime)
-        {
-            transform.localRotation = Quaternion.Slerp(start, Quaternion.identity, time / .16f);
-            yield return null;
-        }
-        transform.localRotation = Quaternion.identity;
-    }
+    // IEnumerator SettleDragRotation()
+    // {
+    //     var start = transform.localRotation;
+    //     for (float time = 0; time < .16f; time += Time.deltaTime)
+    //     {
+    //         transform.localRotation = Quaternion.Slerp(start, Quaternion.identity, time / .16f);
+    //         yield return null;
+    //     }
+    //     transform.localRotation = Quaternion.identity;
+    // }
 
     IEnumerator Pop(float duration)
     {

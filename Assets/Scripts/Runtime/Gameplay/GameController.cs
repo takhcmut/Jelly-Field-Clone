@@ -35,6 +35,9 @@ public class GameController : MonoBehaviour
     [SerializeField, Min(0f)] float cascadeBeforeRemovalDelay = .2f;
     [SerializeField, Min(0f)] float cascadeWaveDelay = .45f;
 
+
+    [SerializeField, Min(0f)]
+    float placementResolveDelay = 0.08f;
     public JellyGameState State { get; private set; }
     public int CurrentLevelIndex { get; private set; }
 
@@ -271,10 +274,31 @@ public class GameController : MonoBehaviour
             return;
         }
 
+        // spawns.Consume(slot);
+        // RebuildViews();
+        // StartCoroutine(ResolveCascade());
         spawns.Consume(slot);
         RebuildViews();
-        StartCoroutine(ResolveCascade());
+
+        resolving = true;
+        State = JellyGameState.ResolvingCascade;
+
+        StartCoroutine(LandingThenResolve(coordinate));
     }
+    IEnumerator LandingThenResolve(Vector2Int cell)
+{
+    // RebuildViews đã tạo view mới tại ô vừa đặt.
+    var view = FindBoardView(cell);
+
+    if (view != null)
+        yield return view.PlayLandingJiggle();
+
+    // Cho người chơi cảm nhận nhịp nảy trước khi pop.
+    if (placementResolveDelay > 0f)
+        yield return new WaitForSeconds(placementResolveDelay);
+
+    yield return ResolveCascade();
+}
 
     IEnumerator ReturnSpawn(int slot)
     {
