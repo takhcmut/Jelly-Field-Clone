@@ -355,6 +355,7 @@ public class GameController : MonoBehaviour
 
             yield return new WaitForSeconds(regionRemovalDuration + cascadeBeforeRemovalDelay);
             objectives.Count(removals);
+            ui.RefreshObjectives(levels[CurrentLevelIndex], objectives);
             board.RemoveRegions(removals);
             foreach (var pair in resultingBlocks)
             {
