@@ -20,6 +20,7 @@ public class GameController : MonoBehaviour
     [SerializeField] GameObject jellyRegionPrefab;
     [SerializeField] GameObject cellPrefab;
     [SerializeField, Range(.5f, 1f)] float cellVisualScale = .82f;
+    [SerializeField, Range(1f, 1.08f)] float regionFillScale = 1.02f;
     [SerializeField, Min(0f)] float dragDepthOffset = .6f;
 
     [Header("Camera")]
@@ -30,7 +31,7 @@ public class GameController : MonoBehaviour
     [SerializeField] JellyMaterialPalette jellyMaterials = new JellyMaterialPalette();
 
     [Header("Cascade timing")]
-    [SerializeField, Min(0f)] float cascadePopDuration = .3f;
+    [SerializeField, Min(.05f)] float regionRemovalDuration = .45f;
     [SerializeField, Min(0f)] float cascadeBeforeRemovalDelay = .2f;
     [SerializeField, Min(0f)] float cascadeWaveDelay = .45f;
 
@@ -152,13 +153,13 @@ public class GameController : MonoBehaviour
 
         foreach (var pair in board.Cells)
         {
-            var view = JellyBlockView.Create(pair.Value, boardRoot, CellWorld(pair.Key), pair.Key, -1, jellyRegionPrefab, jellyMaterials);
+            var view = JellyBlockView.Create(pair.Value, boardRoot, CellWorld(pair.Key), pair.Key, -1, jellyRegionPrefab, jellyMaterials, regionFillScale);
             boardViews.Add(view);
         }
 
         for (int slot = 0; slot < spawns.CurrentSlots.Count; slot++)
         {
-            var view = JellyBlockView.Create(spawns.Get(slot), spawnRoot, SpawnWorld(slot), Vector2Int.zero, slot, jellyRegionPrefab, jellyMaterials);
+            var view = JellyBlockView.Create(spawns.Get(slot), spawnRoot, SpawnWorld(slot), Vector2Int.zero, slot, jellyRegionPrefab, jellyMaterials, regionFillScale);
             spawnViews.Add(view);
         }
     }
@@ -295,14 +296,42 @@ public class GameController : MonoBehaviour
         {
             var removals = matchResolver.FindMatches(board.Cells);
             if (removals.Count == 0) break;
-            var matchedCells = new HashSet<Vector2Int>();
-            foreach (var removal in removals) matchedCells.Add(removal.cell);
-            foreach (var view in boardViews)
-                if (matchedCells.Contains(view.Cell)) view.PlayPop(cascadePopDuration);
-            yield return new WaitForSeconds(cascadePopDuration + cascadeBeforeRemovalDelay);
+
+            var removalsByCell = new Dictionary<Vector2Int, List<RegionRemoval>>();
+            var resultingBlocks = new Dictionary<Vector2Int, JellyBlockData>();
+            foreach (var removal in removals)
+            {
+                if (!removalsByCell.TryGetValue(removal.cell, out var cellRemovals))
+                {
+                    cellRemovals = new List<RegionRemoval>();
+                    removalsByCell.Add(removal.cell, cellRemovals);
+                }
+                cellRemovals.Add(removal);
+            }
+
+            foreach (var pair in removalsByCell)
+            {
+                if (!board.Cells.TryGetValue(pair.Key, out var currentBlock)) continue;
+                var resultingBlock = currentBlock.Clone();
+                var removedIds = new HashSet<int>();
+                foreach (var removal in pair.Value) removedIds.Add(removal.regionId);
+                resultingBlock.regions.RemoveAll(region => removedIds.Contains(region.id));
+                resultingBlock.ApplyGeometry();
+                resultingBlocks[pair.Key] = resultingBlock;
+
+                var view = FindBoardView(pair.Key);
+                if (view != null) view.BeginRegionRemoval(removedIds, resultingBlock, regionRemovalDuration);
+            }
+
+            yield return new WaitForSeconds(regionRemovalDuration + cascadeBeforeRemovalDelay);
             objectives.Count(removals);
             board.RemoveRegions(removals);
-            RebuildViews();
+            foreach (var pair in resultingBlocks)
+            {
+                var view = FindBoardView(pair.Key);
+                if (view != null) view.CommitResolvedData(pair.Value);
+            }
+            boardViews.RemoveAll(view => view == null);
             ui.ShowLevel(levels[CurrentLevelIndex], CurrentLevelIndex, levels.Count, objectives);
             yield return new WaitForSeconds(cascadeWaveDelay);
         }
@@ -315,6 +344,13 @@ public class GameController : MonoBehaviour
             ui.SetCompletionVisible(true);
         }
         else if (!HasEmptyCell()) ui.SetMessage("No moves remain - retry the level");
+    }
+
+    JellyBlockView FindBoardView(Vector2Int cell)
+    {
+        foreach (var view in boardViews)
+            if (view.Cell == cell) return view;
+        return null;
     }
 
     bool HasEmptyCell()

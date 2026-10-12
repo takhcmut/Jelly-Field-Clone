@@ -379,16 +379,18 @@ MonoBehaviour:
   spawnRoot: {fileID: 929000393}
   jellyRegionPrefab: {fileID: 8375288754863266657, guid: 038a367359615ad4a91f8a898dfbee0d, type: 3}
   cellPrefab: {fileID: 7617247805286992659, guid: d0703c1bfe102504f92c6aa0056c02b9, type: 3}
-  cellVisualScale: 0.85
-  cameraElevationDegrees: 8
-  cameraDistance: 20
+  cellVisualScale: 0.87
+  regionFillScale: 1.04
+  dragDepthOffset: 0.2
+  cameraElevationDegrees: 40
+  cameraDistance: 30
   jellyMaterials:
     yellow: {fileID: 2100000, guid: 868f48d1d2e4eaa47b95d9fa653f3c8e, type: 2}
     blue: {fileID: 2100000, guid: 37079798685ca924f8b81071f0017015, type: 2}
     purple: {fileID: 2100000, guid: 3c1d299d0e74213429e7e19df5207fb1, type: 2}
     green: {fileID: 2100000, guid: 28f255a4f80fa03438be8cacd49926a9, type: 2}
     pink: {fileID: 2100000, guid: 452b78c4b44ae1d4cbe0782ac9519651, type: 2}
-  cascadePopDuration: 0.3
+  regionRemovalDuration: 0.6
   cascadeBeforeRemovalDelay: 0.2
   cascadeWaveDelay: 0.45
 --- !u!4 &1608756056
@@ -486,13 +488,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1924306467}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.5, y: 2.5, z: -20}
+  m_LocalRotation: {x: -0.258819, y: 0, z: 0, w: 0.9659259}
+  m_LocalPosition: {x: 1.4, y: -7, z: -16}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -30, y: 0, z: 0}
 --- !u!114 &1924306470
 MonoBehaviour:
   m_ObjectHideFlags: 0

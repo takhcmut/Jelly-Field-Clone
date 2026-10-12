@@ -17,6 +17,7 @@ public class GameHud
         var scaler = canvas.gameObject.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1080, 1920);
+        scaler.matchWidthOrHeight = .5f;
         canvas.gameObject.AddComponent<GraphicRaycaster>();
 
         levelText = CreateText(canvas.transform, "Level", new Vector2(.06f, .92f), new Vector2(.68f, .98f), 42, TextAnchor.MiddleLeft);
