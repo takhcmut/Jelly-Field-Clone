@@ -99,7 +99,7 @@ float jigglePhase;
     // Trở về trạng thái bình thường.
     yield return ScaleActionTo(Vector3.one, 0.10f);
 }
-    public static JellyBlockView Create(JellyBlockData data, Transform parent, Vector3 position, Vector2Int cell, int spawnSlot, GameObject regionPrefab = null, JellyMaterialPalette materialPalette = null, float regionFillScale = 1.02f)
+    public static JellyBlockView Create(JellyBlockData data, Transform parent, Vector3 position, Vector2Int cell, int spawnSlot, GameObject regionPrefab = null, JellyMaterialPalette materialPalette = null, float regionFillScale = 1.02f, float overallScale = 0.94f)
     {
         var objectRoot = new GameObject(spawnSlot >= 0 ? "Spawn Jelly " + spawnSlot : "Jelly " + cell);
         objectRoot.transform.SetParent(parent, false);
@@ -110,6 +110,7 @@ float jigglePhase;
         view.motionRoot = CreateLayer(objectRoot.transform, "MotionRoot");
         view.idleRoot = CreateLayer(view.motionRoot, "IdleJiggle");
         view.actionRoot = CreateLayer(view.idleRoot, "ActionScale");
+        view.motionRoot.localScale = Vector3.one * overallScale;
 
         view.jigglePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
 

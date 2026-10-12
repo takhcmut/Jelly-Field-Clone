@@ -20,8 +20,11 @@ public class GameController : MonoBehaviour
     [SerializeField] GameObject jellyRegionPrefab;
     [SerializeField] GameObject cellPrefab;
     [SerializeField, Range(.5f, 1f)] float cellVisualScale = .82f;
-    [SerializeField, Range(1f, 1.08f)] float regionFillScale = 1.02f;
+    [SerializeField, Range(0f, 1.08f)] float regionFillScale = 1.02f;
     [SerializeField, Min(0f)] float dragDepthOffset = .6f;
+
+    [SerializeField, Range(.7f, 1f)]
+    float jellyOverallScale = .94f;
 
     [Header("Camera")]
     [SerializeField, Range(0f, 45f)] float cameraElevationDegrees = 30f;
@@ -156,13 +159,13 @@ public class GameController : MonoBehaviour
 
         foreach (var pair in board.Cells)
         {
-            var view = JellyBlockView.Create(pair.Value, boardRoot, CellWorld(pair.Key), pair.Key, -1, jellyRegionPrefab, jellyMaterials, regionFillScale);
+            var view = JellyBlockView.Create(pair.Value, boardRoot, CellWorld(pair.Key), pair.Key, -1, jellyRegionPrefab, jellyMaterials, regionFillScale, jellyOverallScale);
             boardViews.Add(view);
         }
 
         for (int slot = 0; slot < spawns.CurrentSlots.Count; slot++)
         {
-            var view = JellyBlockView.Create(spawns.Get(slot), spawnRoot, SpawnWorld(slot), Vector2Int.zero, slot, jellyRegionPrefab, jellyMaterials, regionFillScale);
+            var view = JellyBlockView.Create(spawns.Get(slot), spawnRoot, SpawnWorld(slot), Vector2Int.zero, slot, jellyRegionPrefab, jellyMaterials, regionFillScale, jellyOverallScale);
             spawnViews.Add(view);
         }
     }
