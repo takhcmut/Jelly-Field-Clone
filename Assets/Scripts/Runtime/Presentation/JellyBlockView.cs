@@ -52,36 +52,154 @@ public class JellyBlockView : MonoBehaviour
         return view;
     }
 
-    void Build(GameObject regionPrefab, JellyMaterialPalette materialPalette, float regionFillScale)
-    {
-        Data.ApplyGeometry();
-        ClearRuntimeVisuals();
-        foreach (var region in Data.regions)
-        {
-            var regionRoot = new GameObject("Region " + region.id);
-            regionRoot.transform.SetParent(transform, false);
-            regionRoot.transform.localPosition = RegionCenter(region.rect);
-            regionRoot.transform.localScale = Vector3.one;
+//     void Build(GameObject regionPrefab, JellyMaterialPalette materialPalette, float regionFillScale)
+//     {
+//         Data.ApplyGeometry();
+//         ClearRuntimeVisuals();
+//         foreach (var region in Data.regions)
+//         {
+//             var regionRoot = new GameObject("Region " + region.id);
+//             regionRoot.transform.SetParent(transform, false);
+//             regionRoot.transform.localPosition = RegionCenter(region.rect);
+//             regionRoot.transform.localScale = Vector3.one;
 
-            var visual = regionPrefab == null ? GameObject.CreatePrimitive(PrimitiveType.Cube) : Instantiate(regionPrefab);
-            visual.transform.SetParent(regionRoot.transform, false);
-            visual.transform.localPosition = Vector3.zero;
-            var prefabScale = visual.transform.localScale;
-            visual.transform.localScale = Vector3.Scale(prefabScale, new Vector3(region.rect.width * regionFillScale, region.rect.height * regionFillScale, .32f));
-            CenterVisual(visual, regionRoot.transform);
+//             var visual = regionPrefab == null ? GameObject.CreatePrimitive(PrimitiveType.Cube) : Instantiate(regionPrefab);
+//             visual.transform.SetParent(regionRoot.transform, false);
+//             visual.transform.localPosition = Vector3.zero;
+//             var prefabScale = visual.transform.localScale;
+//             visual.transform.localScale = Vector3.Scale(prefabScale, new Vector3(region.rect.width * regionFillScale, region.rect.height * regionFillScale, .32f));
+//             CenterVisual(visual, regionRoot.transform);
 
-            var material = materialPalette == null ? null : materialPalette.Get(region.color);
-            if (material != null)
-                foreach (var renderer in visual.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial = material;
+//             var material = materialPalette == null ? null : materialPalette.Get(region.color);
+//             if (material != null)
+//                 foreach (var renderer in visual.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial = material;
 
-            regionVisuals[region.id] = new RegionVisual
+//             regionVisuals[region.id] = new RegionVisual
+// {
+//     root = regionRoot.transform,
+//     visual = visual.transform,
+//     rect = region.rect
+// };
+//         }
+//     }
+
+
+void Build(
+    GameObject regionPrefab,
+    JellyMaterialPalette materialPalette,
+    float regionFillScale)
 {
-    root = regionRoot.transform,
-    visual = visual.transform,
-    rect = region.rect
-};
+    Data.ApplyGeometry();
+    ClearRuntimeVisuals();
+
+    foreach (var region in Data.regions)
+    {
+        var regionRoot = new GameObject("Region " + region.id);
+        regionRoot.transform.SetParent(transform, false);
+        regionRoot.transform.localPosition = RegionCenter(region.rect);
+        regionRoot.transform.localRotation = Quaternion.identity;
+        regionRoot.transform.localScale = Vector3.one;
+
+        var visual = regionPrefab == null
+            ? GameObject.CreatePrimitive(PrimitiveType.Cube)
+            : Instantiate(regionPrefab);
+
+        visual.transform.SetParent(regionRoot.transform, false);
+        visual.transform.localPosition = Vector3.zero;
+        visual.transform.localRotation = Quaternion.identity;
+
+        // Không nhân trực tiếp với prefabScale nữa.
+        // Kích thước thực tế sẽ được căn theo Renderer bounds.
+        visual.transform.localScale = Vector3.one;
+
+        FitVisualToRegion(
+            visual,
+            regionRoot.transform,
+            region.rect,
+            regionFillScale
+        );
+
+        var material = materialPalette == null
+            ? null
+            : materialPalette.Get(region.color);
+
+        if (material != null)
+        {
+            foreach (var renderer in
+                     visual.GetComponentsInChildren<Renderer>())
+            {
+                renderer.sharedMaterial = material;
+            }
         }
+
+        regionVisuals[region.id] = new RegionVisual
+        {
+            root = regionRoot.transform,
+            visual = visual.transform,
+            rect = region.rect
+        };
     }
+}
+
+
+static void FitVisualToRegion(
+    GameObject visual,
+    Transform anchor,
+    Rect rect,
+    float fillScale)
+{
+    var renderers = visual.GetComponentsInChildren<Renderer>();
+
+    // Trường hợp không có Renderer để đo kích thước.
+    if (renderers.Length == 0)
+    {
+        visual.transform.localScale = new Vector3(
+            rect.width * fillScale,
+            rect.height * fillScale,
+            0.32f
+        );
+
+        return;
+    }
+
+    // Đưa tâm hình học của visual về tâm region.
+    CenterVisual(visual, anchor);
+
+    var bounds = renderers[0].bounds;
+
+    for (int i = 1; i < renderers.Length; i++)
+        bounds.Encapsulate(renderers[i].bounds);
+
+    var sourceSize = bounds.size;
+
+    var targetSize = new Vector3(
+        rect.width * fillScale,
+        rect.height * fillScale,
+        0.32f
+    );
+
+    // Tính scale dựa trên kích thước mesh thực tế,
+    // không dựa vào scale gốc của prefab.
+    float scaleX = sourceSize.x > 0.0001f
+        ? targetSize.x / sourceSize.x
+        : targetSize.x;
+
+    float scaleY = sourceSize.y > 0.0001f
+        ? targetSize.y / sourceSize.y
+        : targetSize.y;
+
+    float scaleZ = sourceSize.z > 0.0001f
+        ? targetSize.z / sourceSize.z
+        : 1f;
+
+    visual.transform.localScale = Vector3.Scale(
+        visual.transform.localScale,
+        new Vector3(scaleX, scaleY, scaleZ)
+    );
+
+    // Căn lại tâm sau khi thay đổi kích thước.
+    CenterVisual(visual, anchor);
+}
 
     public void BeginRegionRemoval(IReadOnlyCollection<int> removedIds, JellyBlockData resultingBlock, float duration)
     {

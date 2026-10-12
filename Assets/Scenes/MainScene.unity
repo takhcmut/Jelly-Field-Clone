@@ -380,7 +380,7 @@ MonoBehaviour:
   jellyRegionPrefab: {fileID: 8375288754863266657, guid: 038a367359615ad4a91f8a898dfbee0d, type: 3}
   cellPrefab: {fileID: 7617247805286992659, guid: d0703c1bfe102504f92c6aa0056c02b9, type: 3}
   cellVisualScale: 0.87
-  regionFillScale: 1.04
+  regionFillScale: 1
   dragDepthOffset: 0.2
   cameraElevationDegrees: 40
   cameraDistance: 30
