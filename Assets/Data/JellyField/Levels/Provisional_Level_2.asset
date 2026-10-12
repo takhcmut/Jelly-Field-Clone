@@ -74,11 +74,11 @@ MonoBehaviour:
           color: 0
     objectives:
     - color: 0
+      required: 5
+    - color: 3
+      required: 2
+    - color: 4
       required: 4
-    - color: 1
-      required: 1
-    - color: 2
-      required: 3
     spawnSlotCount: 2
     initialSpawns:
     - layout: 1

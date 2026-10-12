@@ -38,8 +38,7 @@ RectTransform objectiveRow;
         ObjectiveTracker objectives)
     {
         if (levelText != null)
-            levelText.text =
-                level.name + "  " + (index + 1) + "/" + total;
+            levelText.text = (index + 1) + "/" + total;
 
       EnsureGoalUI();
 

@@ -47,7 +47,7 @@ public static class SampleLevels
     {
         return new List<LevelData>
         {
-            Make("Level 1", 4, 3, 11, 1, 101),
+            Make("Level 1", 4, 3, 11, 1, 100),
             Make("Level 2", 4, 3, 12, 2, 202),
             Make("Level 3", 5, 3, 13, 2, 303)
         };
