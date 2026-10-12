@@ -26,6 +26,9 @@ public class GameController : MonoBehaviour
     [SerializeField, Range(.7f, 1f)]
     float jellyOverallScale = .94f;
 
+    [Header("UI")]
+    [SerializeField] GameHud ui;
+
     [Header("Camera")]
     [SerializeField, Range(0f, 45f)] float cameraElevationDegrees = 30f;
     [SerializeField, Min(10f)] float cameraDistance = 20f;
@@ -51,7 +54,7 @@ public class GameController : MonoBehaviour
     readonly MatchResolver matchResolver = new MatchResolver();
     readonly ObjectiveTracker objectives = new ObjectiveTracker();
     readonly SpawnController spawns = new SpawnController();
-    readonly GameHud ui = new GameHud();
+
     readonly BoardGridView gridView = new BoardGridView();
 
     bool resolving;
@@ -74,7 +77,7 @@ public class GameController : MonoBehaviour
         Screen.orientation = ScreenOrientation.Portrait;
         LoadLevelDefinitions();
         EnsureSceneReferences();
-        ui.Build(Retry, NextLevel);
+        // ui = ui_canvas.GetComponent<GameHud>();
         LoadLevel(0);
     }
 
