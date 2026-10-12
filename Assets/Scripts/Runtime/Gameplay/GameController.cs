@@ -57,6 +57,8 @@ public class GameController : MonoBehaviour
 
     readonly BoardGridView gridView = new BoardGridView();
 
+    [SerializeField] SFXPlayer sfxPlayer;
+
     bool resolving;
     int draggedSlot = -1;
     Vector3 dragOffset;
@@ -291,15 +293,18 @@ public class GameController : MonoBehaviour
 
         StartCoroutine(LandingThenResolve(coordinate));
     }
-    IEnumerator LandingThenResolve(Vector2Int cell)
+  IEnumerator LandingThenResolve(Vector2Int cell)
 {
-    // RebuildViews đã tạo view mới tại ô vừa đặt.
     var view = FindBoardView(cell);
 
     if (view != null)
-        yield return view.PlayLandingJiggle();
+    {
+        if (sfxPlayer != null)
+            sfxPlayer.PlayLanding();
 
-    // Cho người chơi cảm nhận nhịp nảy trước khi pop.
+        yield return view.PlayLandingJiggle();
+    }
+
     if (placementResolveDelay > 0f)
         yield return new WaitForSeconds(placementResolveDelay);
 
@@ -326,6 +331,9 @@ public class GameController : MonoBehaviour
         {
             var removals = matchResolver.FindMatches(board.Cells);
             if (removals.Count == 0) break;
+
+            if (sfxPlayer != null)
+                sfxPlayer.PlayResolve();
 
             var removalsByCell = new Dictionary<Vector2Int, List<RegionRemoval>>();
             var resultingBlocks = new Dictionary<Vector2Int, JellyBlockData>();

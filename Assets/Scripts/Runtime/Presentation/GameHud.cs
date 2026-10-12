@@ -19,16 +19,14 @@ public class GameHud : MonoBehaviour
     [SerializeField] Sprite greenSprite;
     [SerializeField] Sprite pinkSprite;
 
-    [Header("Goal UI Settings")]
-    [SerializeField] Vector2 panelSize = new Vector2(420f, 110f);
-    [SerializeField] Vector2 iconSize = new Vector2(58f, 58f);
-    [SerializeField] float iconSpacing = 16f;
-    [SerializeField] int countFontSize = 24;
-    [SerializeField] Color panelColor =
-        new Color(0.08f, 0.11f, 0.16f, 0.88f);
+    [Header("Goal Panel")]
+[SerializeField] RectTransform goalPanel;
 
-    RectTransform goalPanel;
-    RectTransform objectiveRow;
+[SerializeField] Vector2 iconSize = new Vector2(58f, 58f);
+[SerializeField] float iconSpacing = 16f;
+[SerializeField] int countFontSize = 24;
+
+RectTransform objectiveRow;
 
     readonly Dictionary<JellyColor, Text> objectiveCounts =
         new Dictionary<JellyColor, Text>();
@@ -43,8 +41,12 @@ public class GameHud : MonoBehaviour
             levelText.text =
                 level.name + "  " + (index + 1) + "/" + total;
 
-        EnsureGoalUI();
-        RebuildObjectives(level, objectives);
+      EnsureGoalUI();
+
+if (objectiveRow == null)
+    return;
+
+RebuildObjectives(level, objectives);
 
         if (objectiveText != null)
             objectiveText.gameObject.SetActive(false);
@@ -58,6 +60,9 @@ public class GameHud : MonoBehaviour
             return;
 
         EnsureGoalUI();
+
+if (objectiveRow == null)
+    return;
 
         foreach (var objective in level.objectives)
         {
@@ -79,72 +84,56 @@ public class GameHud : MonoBehaviour
     }
 
     void EnsureGoalUI()
+{
+    if (goalPanel == null)
     {
-        if (goalPanel != null)
-            return;
-
-        Canvas canvas = levelText != null
-            ? levelText.GetComponentInParent<Canvas>()
-            : GetComponentInParent<Canvas>();
-
-        if (canvas == null)
-        {
-            Debug.LogError(
-                "GameHud: Cannot find a Canvas for the GOAL UI.",
-                this
-            );
-            return;
-        }
-
-        // Main panel
-        var panelObject = new GameObject(
-            "Goal Panel",
-            typeof(RectTransform),
-            typeof(Image),
-            typeof(VerticalLayoutGroup)
+        Debug.LogError(
+            "GameHud: Please assign Goal Panel in the Inspector.",
+            this
         );
+        return;
+    }
 
-        goalPanel = panelObject.GetComponent<RectTransform>();
-        goalPanel.SetParent(canvas.transform, false);
-        goalPanel.anchorMin = new Vector2(0.5f, 1f);
-        goalPanel.anchorMax = new Vector2(0.5f, 1f);
-        goalPanel.pivot = new Vector2(0.5f, 1f);
-        goalPanel.anchoredPosition = new Vector2(0f, -20f);
-        goalPanel.sizeDelta = panelSize;
+    // Configure the existing panel's vertical layout.
+    var vertical = goalPanel.GetComponent<VerticalLayoutGroup>();
 
-        var background = panelObject.GetComponent<Image>();
-        background.color = panelColor;
-        background.raycastTarget = false;
+    if (vertical == null)
+        vertical = goalPanel.gameObject.AddComponent<VerticalLayoutGroup>();
 
-        var vertical = panelObject.GetComponent<VerticalLayoutGroup>();
-        vertical.padding = new RectOffset(12, 12, 8, 8);
-        vertical.spacing = 5f;
-        vertical.childAlignment = TextAnchor.UpperCenter;
-        vertical.childControlWidth = true;
-        vertical.childControlHeight = true;
-        vertical.childForceExpandWidth = true;
-        vertical.childForceExpandHeight = false;
+    // vertical.padding = new RectOffset(12, 12, 8, 8);
+    // // vertical.spacing = 5f;
+    // vertical.childAlignment = TextAnchor.UpperCenter;
+    // vertical.childControlWidth = true;
+    // // vertical.childControlHeight = true;
+    // vertical.childForceExpandWidth = true;
+    // vertical.childForceExpandHeight = false;
 
-        // GOAL title
-        var title = CreateText(
-            goalPanel,
-            "Goal Title",
-            Vector2.zero,
-            Vector2.one,
-            22,
-            TextAnchor.MiddleCenter
-        );
+    // Give the existing GOAL title a preferred height if it exists.
+    Transform titleTransform = goalPanel.Find("Goal Title");
 
-        title.text = "GOAL";
-        title.fontStyle = FontStyle.Bold;
-        title.raycastTarget = false;
-
+    if (titleTransform != null)
+    {
         var titleLayout =
-            title.gameObject.AddComponent<LayoutElement>();
+            titleTransform.GetComponent<LayoutElement>();
+
+        if (titleLayout == null)
+            titleLayout = titleTransform.gameObject.AddComponent<LayoutElement>();
 
         titleLayout.preferredHeight = 28f;
+    }
 
-        // Horizontal row of jelly objectives
+    // Find Objective Row if it already exists.
+    if (objectiveRow == null)
+    {
+        Transform existingRow = goalPanel.Find("Objective Row");
+
+        if (existingRow != null)
+            objectiveRow = existingRow as RectTransform;
+    }
+
+    // Create only the row, not the panel or the title.
+    if (objectiveRow == null)
+    {
         var rowObject = new GameObject(
             "Objective Row",
             typeof(RectTransform),
@@ -154,21 +143,29 @@ public class GameHud : MonoBehaviour
 
         objectiveRow = rowObject.GetComponent<RectTransform>();
         objectiveRow.SetParent(goalPanel, false);
-
-        var horizontal =
-            rowObject.GetComponent<HorizontalLayoutGroup>();
-
-        horizontal.spacing = iconSpacing;
-        horizontal.childAlignment = TextAnchor.MiddleCenter;
-        horizontal.childControlWidth = false;
-        horizontal.childControlHeight = false;
-        horizontal.childForceExpandWidth = false;
-        horizontal.childForceExpandHeight = false;
-
-        var rowLayout = rowObject.GetComponent<LayoutElement>();
-        rowLayout.preferredHeight = iconSize.y + 4f;
-        rowLayout.flexibleWidth = 1f;
     }
+
+    var horizontal =
+        objectiveRow.GetComponent<HorizontalLayoutGroup>();
+
+    if (horizontal == null)
+        horizontal = objectiveRow.gameObject.AddComponent<HorizontalLayoutGroup>();
+
+    horizontal.spacing = iconSpacing;
+    horizontal.childAlignment = TextAnchor.MiddleCenter;
+    horizontal.childControlWidth = false;
+    horizontal.childControlHeight = false;
+    horizontal.childForceExpandWidth = false;
+    horizontal.childForceExpandHeight = false;
+
+    var rowLayout = objectiveRow.GetComponent<LayoutElement>();
+
+    if (rowLayout == null)
+        rowLayout = objectiveRow.gameObject.AddComponent<LayoutElement>();
+
+    rowLayout.preferredHeight = iconSize.y + 4f;
+    rowLayout.flexibleWidth = 1f;
+}
 
     void RebuildObjectives(
         LevelData level,
