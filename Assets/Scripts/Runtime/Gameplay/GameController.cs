@@ -19,7 +19,12 @@ public class GameController : MonoBehaviour
     [Header("Board visuals")]
     [SerializeField] GameObject jellyRegionPrefab;
     [SerializeField] GameObject cellPrefab;
-    [SerializeField, Range(.5f, 1f)] float cellVisualScale = .92f;
+    [SerializeField, Range(.5f, 1f)] float cellVisualScale = .82f;
+    [SerializeField, Min(0f)] float dragDepthOffset = .6f;
+
+    [Header("Camera")]
+    [SerializeField, Range(0f, 45f)] float cameraElevationDegrees = 30f;
+    [SerializeField, Min(10f)] float cameraDistance = 20f;
 
     [Header("Jelly materials")]
     [SerializeField] JellyMaterialPalette jellyMaterials = new JellyMaterialPalette();
@@ -45,6 +50,7 @@ public class GameController : MonoBehaviour
     bool resolving;
     int draggedSlot = -1;
     Vector3 dragOffset;
+    Vector3 lastDragWorld;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
@@ -172,8 +178,11 @@ public class GameController : MonoBehaviour
         var maxX = 0;
         var maxY = 0;
         foreach (var cell in level.validCells) { maxX = Mathf.Max(maxX, cell.x); maxY = Mathf.Max(maxY, cell.y); }
-        gameCamera.transform.position = new Vector3(maxX * .5f, (maxY + 1.2f) * .5f + .7f, -20);
-        gameCamera.transform.rotation = Quaternion.identity;
+        var target = new Vector3(maxX * .5f, (maxY + 1.2f) * .5f + .7f, 0);
+        var elevationRadians = cameraElevationDegrees * Mathf.Deg2Rad;
+        var cameraOffset = new Vector3(0, -Mathf.Sin(elevationRadians) * cameraDistance, -Mathf.Cos(elevationRadians) * cameraDistance);
+        gameCamera.transform.position = target + cameraOffset;
+        gameCamera.transform.rotation = Quaternion.LookRotation(target - gameCamera.transform.position, Vector3.up);
         gameCamera.orthographicSize = Mathf.Max(4.6f, (maxY + 3.7f) * .55f);
         gameCamera.aspect = Mathf.Max(.45f, (float)Screen.width / Screen.height);
     }
@@ -194,20 +203,30 @@ public class GameController : MonoBehaviour
         else if ((touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled) && draggedSlot >= 0) EndDrag(touch.position);
     }
 
-    Vector3 ScreenToWorld(Vector3 screen)
+    bool TryScreenToBoard(Vector2 screen, out Vector3 world)
     {
-        return gameCamera.ScreenToWorldPoint(new Vector3(screen.x, screen.y, -gameCamera.transform.position.z));
+        var ray = gameCamera.ScreenPointToRay(screen);
+        var boardPlane = new Plane(Vector3.forward, Vector3.zero);
+        if (boardPlane.Raycast(ray, out var distance))
+        {
+            world = ray.GetPoint(distance);
+            return true;
+        }
+
+        world = default;
+        return false;
     }
 
     void BeginDrag(Vector3 screen)
     {
-        var world = ScreenToWorld(screen);
+        if (!TryScreenToBoard(screen, out var world)) return;
         for (int slot = 0; slot < spawnViews.Count; slot++)
         {
             if (Vector2.Distance(world, spawnViews[slot].transform.position) < .9f)
             {
                 draggedSlot = slot;
                 dragOffset = spawnViews[slot].transform.position - world;
+                lastDragWorld = world;
                 spawnViews[slot].SetSelected(true);
                 return;
             }
@@ -216,19 +235,28 @@ public class GameController : MonoBehaviour
 
     void ContinueDrag(Vector3 screen)
     {
-        var world = ScreenToWorld(screen);
-        spawnViews[draggedSlot].transform.position = world + dragOffset;
+        if (!TryScreenToBoard(screen, out var world)) return;
+        var dragVelocity = (world - lastDragWorld) / Mathf.Max(Time.deltaTime, .0001f);
+        var dragPosition = world + dragOffset;
+        dragPosition.z = -dragDepthOffset;
+        spawnViews[draggedSlot].transform.position = dragPosition;
         spawnViews[draggedSlot].SetDragging(true);
+        spawnViews[draggedSlot].SetDragVelocity(dragVelocity);
+        lastDragWorld = world;
     }
 
     void EndDrag(Vector3 screen)
     {
-        var world = ScreenToWorld(screen);
-        var coordinate = new Vector2Int(Mathf.RoundToInt(world.x), Mathf.RoundToInt(world.y - 2.2f));
         var slot = draggedSlot;
         draggedSlot = -1;
         spawnViews[slot].SetSelected(false);
         spawnViews[slot].SetDragging(false);
+        if (!TryScreenToBoard(screen, out var world))
+        {
+            StartCoroutine(ReturnSpawn(slot));
+            return;
+        }
+        var coordinate = new Vector2Int(Mathf.RoundToInt(world.x), Mathf.RoundToInt(world.y - 2.2f));
 
         if (!board.IsEmpty(coordinate))
         {
@@ -267,7 +295,10 @@ public class GameController : MonoBehaviour
         {
             var removals = matchResolver.FindMatches(board.Cells);
             if (removals.Count == 0) break;
-            foreach (var view in boardViews) view.PlayPop(cascadePopDuration);
+            var matchedCells = new HashSet<Vector2Int>();
+            foreach (var removal in removals) matchedCells.Add(removal.cell);
+            foreach (var view in boardViews)
+                if (matchedCells.Contains(view.Cell)) view.PlayPop(cascadePopDuration);
             yield return new WaitForSeconds(cascadePopDuration + cascadeBeforeRemovalDelay);
             objectives.Count(removals);
             board.RemoveRegions(removals);

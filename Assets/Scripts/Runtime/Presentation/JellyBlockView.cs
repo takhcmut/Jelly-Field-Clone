@@ -27,7 +27,9 @@ public class JellyMaterialPalette
 public class JellyBlockView : MonoBehaviour
 {
     public JellyBlockData Data { get; set; }
+    public Vector2Int Cell { get; private set; }
     readonly System.Collections.Generic.List<Transform> pieces = new System.Collections.Generic.List<Transform>();
+    bool isDragging;
 
     public static JellyBlockView Create(JellyBlockData data, Transform parent, Vector3 position, Vector2Int cell, int spawnSlot, GameObject regionPrefab = null, JellyMaterialPalette materialPalette = null)
     {
@@ -36,6 +38,7 @@ public class JellyBlockView : MonoBehaviour
         objectRoot.transform.position = position;
         var view = objectRoot.AddComponent<JellyBlockView>();
         view.Data = data;
+        view.Cell = cell;
         view.Build(regionPrefab, materialPalette);
         return view;
     }
@@ -56,8 +59,8 @@ public class JellyBlockView : MonoBehaviour
             cube.transform.SetParent(regionRoot.transform, false);
             cube.transform.localPosition = Vector3.zero;
             var prefabScale = cube.transform.localScale;
-            cube.transform.localScale = Vector3.Scale(prefabScale, new Vector3(region.rect.width * .92f, region.rect.height * .92f, .32f));
-            CenterVisual(cube, regionRoot.transform);
+            cube.transform.localScale = Vector3.Scale(prefabScale, new Vector3(region.rect.width, region.rect.height, .32f));
+            FitVisualToRegion(cube, regionRoot.transform, region.rect);
             var material = materialPalette == null ? null : materialPalette.Get(region.color);
             if (material != null)
                 foreach (var renderer in cube.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial = material;
@@ -67,12 +70,33 @@ public class JellyBlockView : MonoBehaviour
 
     static void CenterVisual(GameObject visual, Transform anchor)
     {
-        var renderers = visual.GetComponentsInChildren<Renderer>();
-        if (renderers.Length == 0) return;
-
-        var bounds = renderers[0].bounds;
-        for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+        if (!TryGetRendererBounds(visual, out var bounds)) return;
         visual.transform.position += anchor.position - bounds.center;
+    }
+
+    static void FitVisualToRegion(GameObject visual, Transform anchor, Rect region)
+    {
+        CenterVisual(visual, anchor);
+        if (!TryGetRendererBounds(visual, out var bounds)) return;
+        if (bounds.size.x <= .0001f || bounds.size.y <= .0001f) return;
+
+        var fitScale = new Vector3(region.width / bounds.size.x, region.height / bounds.size.y, 1f);
+        visual.transform.localScale = Vector3.Scale(visual.transform.localScale, fitScale);
+        CenterVisual(visual, anchor);
+    }
+
+    static bool TryGetRendererBounds(GameObject visual, out Bounds bounds)
+    {
+        var renderers = visual.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0)
+        {
+            bounds = default;
+            return false;
+        }
+
+        bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+        return true;
     }
 
     public void SetSelected(bool selected)
@@ -83,7 +107,30 @@ public class JellyBlockView : MonoBehaviour
 
     public void SetDragging(bool dragging)
     {
+        if (isDragging == dragging) return;
+        isDragging = dragging;
+        StopAllCoroutines();
         transform.localScale = dragging ? new Vector3(1.08f, .92f, 1) : Vector3.one;
+        if (!dragging) StartCoroutine(SettleDragRotation());
+    }
+
+    public void SetDragVelocity(Vector3 velocity)
+    {
+        if (!isDragging) return;
+        var sway = Mathf.Clamp(velocity.x * .015f, -12f, 12f);
+        var pitch = Mathf.Clamp(-velocity.y * .015f, -12f, 12f);
+        transform.localRotation = Quaternion.Euler(pitch, sway, -sway * .7f);
+    }
+
+    IEnumerator SettleDragRotation()
+    {
+        var start = transform.localRotation;
+        for (float t = 0; t < .16f; t += Time.deltaTime)
+        {
+            transform.localRotation = Quaternion.Slerp(start, Quaternion.identity, t / .16f);
+            yield return null;
+        }
+        transform.localRotation = Quaternion.identity;
     }
 
     public void PlayPop(float duration = .08f)
