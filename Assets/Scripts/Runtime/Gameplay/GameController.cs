@@ -184,20 +184,58 @@ public class GameController : MonoBehaviour
     Vector3 CellWorld(Vector2Int coordinate) => new Vector3(coordinate.x, coordinate.y + 2.2f, 0);
     Vector3 SpawnWorld(int slot) => new Vector3(slot * 1.7f + .3f, -.2f, 0);
 
+    // void FrameCamera()
+    // {
+    //     var level = levels[CurrentLevelIndex];
+    //     var maxX = 0;
+    //     var maxY = 0;
+    //     foreach (var cell in level.validCells) { maxX = Mathf.Max(maxX, cell.x); maxY = Mathf.Max(maxY, cell.y); }
+    //     var target = new Vector3(maxX * .5f, (maxY + 1.2f) * .5f + .7f, 0);
+    //     var elevationRadians = cameraElevationDegrees * Mathf.Deg2Rad;
+    //     var cameraOffset = new Vector3(0, -Mathf.Sin(elevationRadians) * cameraDistance, -Mathf.Cos(elevationRadians) * cameraDistance);
+    //     gameCamera.transform.position = target + cameraOffset;
+    //     gameCamera.transform.rotation = Quaternion.LookRotation(target - gameCamera.transform.position, Vector3.up);
+    //     gameCamera.orthographicSize = Mathf.Max(4.6f, (maxY + 3.7f) * .55f);
+    //     gameCamera.aspect = Mathf.Max(.45f, (float)Screen.width / Screen.height);
+    // }
+
     void FrameCamera()
-    {
-        var level = levels[CurrentLevelIndex];
-        var maxX = 0;
-        var maxY = 0;
-        foreach (var cell in level.validCells) { maxX = Mathf.Max(maxX, cell.x); maxY = Mathf.Max(maxY, cell.y); }
-        var target = new Vector3(maxX * .5f, (maxY + 1.2f) * .5f + .7f, 0);
-        var elevationRadians = cameraElevationDegrees * Mathf.Deg2Rad;
-        var cameraOffset = new Vector3(0, -Mathf.Sin(elevationRadians) * cameraDistance, -Mathf.Cos(elevationRadians) * cameraDistance);
-        gameCamera.transform.position = target + cameraOffset;
-        gameCamera.transform.rotation = Quaternion.LookRotation(target - gameCamera.transform.position, Vector3.up);
-        gameCamera.orthographicSize = Mathf.Max(4.6f, (maxY + 3.7f) * .55f);
-        gameCamera.aspect = Mathf.Max(.45f, (float)Screen.width / Screen.height);
+{
+    var level = levels[CurrentLevelIndex];
+    if (level.validCells == null || level.validCells.Count == 0) return;
+
+    int minX = int.MaxValue;
+    int maxX = int.MinValue;
+    int minY = int.MaxValue;
+    int maxY = int.MinValue;
+
+    foreach (var cell in level.validCells) 
+    { 
+        minX = Mathf.Min(minX, cell.x);
+        maxX = Mathf.Max(maxX, cell.x); 
+        minY = Mathf.Min(minY, cell.y);
+        maxY = Mathf.Max(maxY, cell.y); 
     }
+    var target = new Vector3((minX + maxX) * .5f, ((minY + maxY) * .5f) + 1.2f, 0);
+
+    float boardWidth = (maxX - minX + 2.5f);
+    float boardHeight = (maxY - minY + 3.7f);
+
+    float aspect = Mathf.Max(0.45f, (float)Screen.width / Screen.height);
+
+    float orthoSizeForHeight = boardHeight * 0.55f;
+    float orthoSizeForWidth = (boardWidth * 0.5f) / aspect;
+
+    float finalOrthoSize = Mathf.Max(4.6f, Mathf.Max(orthoSizeForHeight, orthoSizeForWidth));
+
+    var elevationRadians = cameraElevationDegrees * Mathf.Deg2Rad;
+    var cameraOffset = new Vector3(0, -Mathf.Sin(elevationRadians) * cameraDistance, -Mathf.Cos(elevationRadians) * cameraDistance);
+    
+    gameCamera.transform.position = target + cameraOffset;
+    gameCamera.transform.rotation = Quaternion.LookRotation(target - gameCamera.transform.position, Vector3.up);
+    gameCamera.orthographicSize = finalOrthoSize;
+    gameCamera.aspect = aspect;
+}
 
     void Update()
     {
